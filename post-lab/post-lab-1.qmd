@@ -1,0 +1,73 @@
+---
+title: "Post Lab 1 Practice"
+author: "Nathaniel Grimes"
+format: 
+  html:
+    code-fold: true
+    embed-resources: true
+execute:
+  eval: true
+  echo: true
+  warning: true
+  message: true
+---
+
+# Post-Lab Practice
+
+Create a new repository in your GitHub account. Clone this into R Studio (no need to fork, it's already in your account).
+
+In this new repository, create a new Quarto document and set it up:
+
+-   Code folding (either `true` (fold, but hide it) or `show` (fold, but show it))
+-   Echo code to the document, but suppress warnings and messages
+
+Delete the template text, and create a new code chunk. Attach the `tidyverse` package. Attach the `gapminder` package (install it if you need to!).
+
+## Wrangling Practice
+
+1. Examine the `relig_income` data. Is it tidy? Which of these functions would you use to help you make it tidy?
+
+  a. `mutate()`
+  
+  b. `separate()`
+  
+  c. `pivot_longer()`
+  
+  d. `select()`
+  
+2. Use the function you selected in question 1 to make `relig_income` tidy
+
+3. What does the following code do?
+
+```{r}
+#| eval: false
+
+lizard_clean<-lizard %>% 
+  select(spp,sex,SV_length,weight) %>% 
+  filter(sex!="J") %>% 
+  drop_na() %>% 
+  group_by(spp,sex) %>% 
+  filter(n()>=6)
+```
+
+
+
+## Analysis Work:
+
+Use the `gapminder` life expectancy data from `gapminder` package (install if needed). Conduct an analysis on whether life expectancy is increasing over time. Run a linear regression on the data with `gdpPercap` and `continent` as covariates. Plot the observed trends however you see fit.
+
+## Followup questions:
+
+-   Write a sentence or two describing the trends you see in the plots. Which model (log or not) did you choose and why?
+-   Write a sentence or two to explain the coefficients on your linear model output, including statistical significance.
+    -   Which continent is the "reference" continent?
+    -   What does the "year" coefficient represent? 
+    -   What do the coefficients on each continent represent? Do these make intuitive sense?
+-   Does a linear model seem like a good way to approach these data? Why or why not?
+
+Render your Quarto document, and then stage, commit, and push back to your Github repository. Make sure the updates are reflected online!
+
+
+
+
+

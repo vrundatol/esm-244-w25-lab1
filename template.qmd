@@ -1,0 +1,202 @@
+---
+title: "Template"
+format: html
+execute:
+  eval: false
+---
+
+## Load in Data
+
+You may need to install these packages
+
+```{r}
+library(tidyverse)
+library(sf)
+library(here)
+library(tmap)
+```
+
+
+What do we need to change to get the data to load in the following chunk?
+
+```{r}
+sfo_trees_df<-read_csv(here("data","trees")) |> janitor::clean_names()
+```
+
+## Part 1: Data exploration
+
+Look at `sfo_trees_df` dataframe. How many observations are there? What does the data include? Use the console to explore the data.
+
+What are some interesting questions you could ask about the data?
+
+Write them below:
+
+
+
+
+
+
+
+
+
+### Example 2
+
+Describe what this piece of code does. Feel free to run it to help you understand
+
+```{r}
+permitted_mta_dpw<-sfo_trees_df |> 
+  filter(legal_status == 'Permitted Site' & %in% c("MTA","DPW"))
+```
+
+
+What does the `%in%` do? Write an example to explain the `%in%` operator to your neighbor using the empty code chunk below
+
+```{r}
+
+```
+
+
+### Example 3
+
+Our boss tasked us with identifying oak and pine trees in SF based on legal status, location, and planting date. Wrangle the data to plot the locations (without sf borders for now) and then summarize the number of oak and pines by legal status in a separate df. Call the wrangled dataframe `oak_pine_df` and the summary `oak_pine_count`
+
+Write pseudocode on how you would solve it
+
+
+
+
+
+
+
+
+Data wrangle done below:
+
+
+```{r}
+
+```
+
+
+Summary stats
+
+```{r}
+oak_pine_count<-oak_pine_df |> 
+  group_by(legal_status,type)
+  summarize(count=n())
+```
+
+
+
+Plot the locations of the trees as a scatterplot
+
+```{r}
+
+```
+
+
+
+### Example 4
+
+Why have a list of native trees in the data folder.
+
+```{r}
+ca_native_df<-read_csv(here('data/sfo/ca_native_spp.csv'))
+
+# Why can I use this format instead of the usual here("data","folder","file")?
+```
+
+
+## Part 2: Analysis and maps
+
+We want to see if there was a difference in planting years between a native oak *Quercus agrifolia* and a native pine *Pinus radiata*. Wrangle the data and use an appropriate statistical test to see if there is a difference.
+
+
+
+**New Function!**
+
+How to extract the year from the plant data column when it looks like "2022-11-16"? The package `lubridate` and function `year()` pulls out year information from date formats.  See the example code below.
+
+```{r}
+lubridate::year("2022-11-16")
+```
+
+```{r}
+oak_pine_year_df<-????
+```
+
+
+Use the graph below to support your results. What does each line of code do in the ggplot?
+
+```{r}
+ggplot(oak_pine_year_df)+
+  geom_histogram(aes(x=plant_year),bins = 10)+
+  facet_wrap(~spp_sci,ncol=1)+
+  theme_minimal()
+```
+
+
+Plot the selected species as points with a different colors for each year and a different shape for each species
+
+### Spatial map:
+
+Follow along as the instructor walks through each code chunk. In week 7 we'll cover spatial manipulation in R in far more detail. This is just to show a pretty map for all the work we did.
+
+**Step 1**
+
+Set the coordinate reference system
+
+```{r}
+oak_pine_sf<-oak_pine_year_df |> 
+  drop_na(longtide,latitude) |> 
+  st_as_sf(coords=c("longitude","latitude"))
+
+st_crs(oak_pine_sf)<-4326
+
+ggplot(data=oak_pine_sf)+
+  geom_sf(aes(color=spp_sci))+
+  theme_minimal()
+```
+
+
+**Step 2**
+
+Read in the shape file for San Fransico.
+
+```{r}
+sfo_map <- read_sf(here("data", "sfo_map", "tl_2017_06075_roads.shp"))
+
+#What do you think this does?
+st_transform(sfo_map, 4326)
+```
+
+Plot it to see the outlines of streets
+
+```{r}
+ggplot(data = sfo_map) +
+  geom_sf()
+```
+
+
+We have all the ingredients. How would you plot these two together to see the trees locations in the city?
+
+```{r}
+
+```
+
+
+### Interactive Maps!
+
+We can make maps interactive in R using the tmaps package (another reason why html docs are so cool).
+
+There are other packages that do similar things. Consider for your shiny apps!
+
+```{r}
+tmap_model("view")
+
+tm_shape(oak_pine_sf)+
+  tm_dots(col='spp_sci')
+```
+
+
+
+WE ARE NOT DONE UNTIL WE SAVE, STAGE, COMMIT, AND PUSH!!!!!!
