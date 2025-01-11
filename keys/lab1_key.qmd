@@ -282,6 +282,3 @@ tm_shape(oak_pine_sf) +
 ## Wrap up part 2
 
 Make sure you render, stage, commit, pull, then push back to GitHub. Done!
-
-
-
