@@ -1,8 +1,0 @@
----
-title: "lab1"
-author: "Vrunda Tol"
-format: html
-editor: visual
----
-
-## ESM 244 Lab-1

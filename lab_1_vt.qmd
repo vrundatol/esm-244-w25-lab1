@@ -1,0 +1,246 @@
+---
+title: "Lab 1: Wrangling review and a few new things"
+author: "Vrunda Tol"
+format: 
+  html:
+    toc: true
+    code-fold: show
+    number-sections: true
+    embed-resources: true
+execute: 
+  message: false
+  warning: false
+editor: visual
+---
+
+# ESM 244 Lab-1
+
+## Attach Packages
+
+```{r}
+library(tidyverse)
+library(here)
+library(sf)
+library(tmap)
+```
+
+## Read in the data
+
+```{r}
+sfo_trees_df <- read.csv(here("data", "sfo_trees", "sfo_trees.csv")) %>% 
+  janitor::clean_names()
+```
+
+## Part 1: Data Exploration and Wrangling Review
+
+### Example 1
+
+1.  Find counts of observations by legal_status. Then select the statuses with the five highest tree counts.
+
+```{r}
+#| message: false
+
+top_5_status <- sfo_trees_df %>% 
+  filter(!is.na(legal_status)) %>% 
+  ### drop_na(legal_status) %>% ### same thing!
+  group_by(legal_status) %>% 
+  summarise(tree_count = n()) %>% 
+  ungroup() %>% 
+  slice_max(tree_count, n = 5) %>% 
+  arrange(-tree_count)
+
+```
+
+2.  Make a graph of top 5 from above.
+
+```{r}
+#| label: fig-sf-trees
+#| fig-cap: SFO Trees Top 5 Legal Status
+
+
+top_5_plot <- ggplot(top_5_status, aes(x = legal_status, y = tree_count)) +
+  geom_col() +
+  labs(
+    y = "Tree Count",
+    x = "Legal Status",
+    title = "Top 5 legal status of SFO trees"
+  ) +
+  theme_bw()
+
+top_5_plot
+
+```
+
+Results are in figure 1 @fig-sf-trees
+
+### Example 2
+
+1. Only keep observations where legal status is **Permitted Site** and caretaker is **MTA** or **DPW**. Store as **permitted_mta_dpw**.
+
+```{r}
+
+permitted_mta_dpw <- sfo_trees_df %>% 
+  filter(legal_status == "Permitted Site" & caretaker %in% c("MTA", "DPW"))
+
+```
+
+### Example 3
+
+1. Only keep observations of oak and pine trees, then only keep columns **species**, **legal_status**, **plant_date**, **latitude**, and **longitude**. Note which category each tree falls into, as column **type**. Store as **oak_pine_df**.
+
+```{r}
+
+oak_pine_df <- sfo_trees_df %>% 
+  filter(str_detect(species, "Oak") | str_detect(species, "Pine")) %>% 
+  select(species, legal_status, plant_date, latitude, longitude) %>% 
+  mutate(
+    type = ifelse(str_detect(species, "Oak"), "Oak", "Pine")
+  )
+
+```
+
+2. Make a little graph of locations. Which trees are oak vs pines?
+
+```{r}
+#| message: false
+#| warning: false
+
+oak_pine_plot <- ggplot(oak_pine_df, aes(y = latitude, x = longitude, colour = type)) +
+  geom_point() +
+  theme_bw() +
+  theme(axis.title = element_blank()) +
+  labs(
+    color = "Tree Type",
+    title = " Locations of Oak and Pine Trees in SF"
+  )
+
+oak_pine_plot
+
+```
+
+### Example 4
+
+Load a list of CA native species.
+
+```{r}
+#| message: false
+#| warning: false
+
+ca_native_df <- read_csv(here("data", "sfo_trees", "ca_native_spp.csv"))
+
+```
+
+How can we compare the California native species to those in our SF trees data? Add a column notes whether each tree is a CA native or not, and save as sfo_trees_native (include species info, legal status, plant date, and location). Then, count how many native vs. non-native trees for each legal status category, and save as sfo_native_status. Extension: include how many individual species in each category as well!
+
+```{r}
+#| message: false
+#| warning: false
+
+# ca_native_df <- ca_native_df %>% 
+#  mutate(species = paste(scientific_name, " :: ", str_to_title(common_name)))
+
+# sfo_trees_native <- sfo_trees_df %>% 
+#  select(species, legal_status, plant_date, address, latitude, longitude) %>% 
+#  full_join(ca_native_df)
+
+sfo_trees_native <- sfo_trees_df %>% 
+  separate(species, into = c("spp_sci", "spp_common"), sep = " :: ") %>%
+  select(starts_with('spp'), 'plant_date', 'legal_status', 'longitude', 'latitude') %>%
+  mutate(ca_native = (spp_sci %in% ca_native_df$scientific_name))
+
+sfo_native_status <- sfo_trees_native %>%
+  group_by(legal_status, ca_native) %>%
+  summarize(n_trees = n(),
+            n_species = n_distinct(spp_sci))
+
+```
+
+## Part 2: Analysis and Quickie Maps
+
+Considering only Coast Live Oak and Monterey Pine, have tree planting preferences changed over time?
+
+### Wrangling
+
+Create a new dataframe that contains only Coast Live Oak and Monterey Pine observations (NOT all oaks and pines!), and include information on year and location. Call this **oak_pine_year_df**.
+
+Then, determine whether there is a difference in when trees have been planted.
+
+```{r}
+
+oak_pine_year_df <- sfo_trees_native %>% 
+  filter(spp_sci %in% c("Quercus agrifolia", "Pinus radiata")) %>% 
+  mutate(plant_year = year(plant_date))
+
+t.test(plant_year ~ spp_sci, data = oak_pine_year_df)
+
+```
+
+```{r}
+
+ggplot(oak_pine_year_df) +
+  geom_histogram(aes(x = plant_year), bins = 10) +
+  facet_wrap(~ spp_sci, ncol = 1) +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(oak_pine_year_df) +
+  geom_point(aes(x = longitude, y = latitude, color = plant_year, shape = spp_sci))
+```
+
+```{r}
+
+oak_pine_sf <- oak_pine_year_df %>% 
+  drop_na(longitude, latitude) %>% 
+  st_as_sf(coords = c("longitude", "latitude")) # Convert to spatial coordinates
+
+# But we need to set the coordinate reference system (CRS) so it's compatible with the street map of San Francisco we'll use as a "base layer":
+st_crs(oak_pine_sf) <- 4326
+
+# Then we can use `geom_sf`!
+
+ggplot(data = oak_pine_sf) +
+  geom_sf(aes(color = spp_sci)) +
+  theme_minimal()
+
+```
+
+```{r}
+
+sfo_map <- read_sf(here("data", "sfo_map", "tl_2017_06075_roads.shp"))
+
+st_transform(sfo_map, 4326)
+
+```
+
+```{r}
+
+ggplot(data = sfo_map) +
+  geom_sf()
+
+```
+
+```{r}
+
+ggplot() +
+  geom_sf(data = sfo_map,
+          size = 0.1,
+          color = "darkgray") +
+  geom_sf(data = oak_pine_sf, 
+          aes(color = spp_sci),
+          size = 0.5) +
+  theme_void() +
+  labs(title = "Oaks and pines in San Francisco")
+
+```
+
+```{r}
+
+tmap_mode("view")
+
+tm_shape(oak_pine_sf) + 
+  tm_dots(col = 'spp_sci')
+
+```
+
