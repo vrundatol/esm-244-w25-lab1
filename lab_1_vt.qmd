@@ -1,4 +1,4 @@
----
+1---
 title: "Lab 1: Wrangling review and a few new things"
 author: "Vrunda Tol"
 format: 
@@ -75,7 +75,7 @@ Results are in figure 1 @fig-sf-trees
 
 ### Example 2
 
-1. Only keep observations where legal status is **Permitted Site** and caretaker is **MTA** or **DPW**. Store as **permitted_mta_dpw**.
+1.  Only keep observations where legal status is **Permitted Site** and caretaker is **MTA** or **DPW**. Store as **permitted_mta_dpw**.
 
 ```{r}
 
@@ -86,7 +86,7 @@ permitted_mta_dpw <- sfo_trees_df %>%
 
 ### Example 3
 
-1. Only keep observations of oak and pine trees, then only keep columns **species**, **legal_status**, **plant_date**, **latitude**, and **longitude**. Note which category each tree falls into, as column **type**. Store as **oak_pine_df**.
+1.  Only keep observations of oak and pine trees, then only keep columns **species**, **legal_status**, **plant_date**, **latitude**, and **longitude**. Note which category each tree falls into, as column **type**. Store as **oak_pine_df**.
 
 ```{r}
 
@@ -99,7 +99,7 @@ oak_pine_df <- sfo_trees_df %>%
 
 ```
 
-2. Make a little graph of locations. Which trees are oak vs pines?
+2.  Make a little graph of locations. Which trees are oak vs pines?
 
 ```{r}
 #| message: false
@@ -243,4 +243,3 @@ tm_shape(oak_pine_sf) +
   tm_dots(col = 'spp_sci')
 
 ```
-
